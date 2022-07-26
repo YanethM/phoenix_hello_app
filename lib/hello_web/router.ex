@@ -2,14 +2,39 @@ defmodule HelloWeb.Router do
   use HelloWeb, :router
 
   pipeline :browser do
-    plug :accepts, ["html"]
+
+    plug :accepts, ["html", "text"]
     plug :fetch_session
     plug :fetch_live_flash
     plug :put_root_layout, {HelloWeb.LayoutView, :root}
     plug :protect_from_forgery
     plug :put_secure_browser_headers
-  end
-
+    plug :fetch_current_user
+    plug :fetch_current_cart
+    plug HelloWeb.Plugs.Locale, "en"
+ end
+ defp fetch_current_user(conn, _) do
+     if user_uuid = get_session(conn, :current_uuid) do
+       assign(conn, :current_uuid, user_uuid)
+     else
+       new_uuid = Ecto.UUID.generate()
+  
+       conn
+       |> assign(:current_uuid, new_uuid)
+       |> put_session(:current_uuid, new_uuid)
+     end
+   end
+  
+   alias Hello.ShoppingCart
+  
+   def fetch_current_cart(conn, _opts) do
+     if cart = ShoppingCart.get_cart_by_user_uuid(conn.assigns.current_uuid) do
+       assign(conn, :cart, cart)
+     else
+       {:ok, new_cart} = ShoppingCart.create_cart(conn.assigns.current_uuid)
+       assign(conn, :cart, new_cart)
+     end
+   end
   pipeline :api do
     plug :accepts, ["json"]
   end
@@ -18,13 +43,36 @@ defmodule HelloWeb.Router do
     pipe_through :browser
 
     get "/", PageController, :index
+    resources "/products", ProductController
+    resources "/cart_items", CartItemController, only: [:create, :delete]
+    get "/cart", CartController, :show
+    put "/cart", CartController, :update
+    resources "/orders", OrderController, only: [:create, :show]
+
+    get "/hello", HelloController, :index
+    #get "/hello/:messenger", HelloController, :show
+    get "/hello/:username", HelloController, :show
+    # redirección
+    get "/redirect_test", PageController, :redirect_test
+    resources "/users", UserController
+    resources "/posts", PostController, only: [:index, :show]
+    resources "/comments", CommentController, except: [:delete]
+    resources "/reviews", ReviewController
+    resources "/users", UserController do
+      resources "/posts", PostController
+    end
   end
 
-  # Other scopes may use custom stacks.
-  # scope "/api", HelloWeb do
-  #   pipe_through :api
-  # end
 
+  scope "/api", HelloWeb.Api, as: :api do
+    pipe_through :api
+
+    scope "/v1", V1, as: :v1 do
+      resources "/images",  ImageController
+      resources "/reviews", ReviewController
+      resources "/users",   UserController
+    end
+  end
   # Enables LiveDashboard only for development
   #
   # If you want to use the LiveDashboard in production, you should put
