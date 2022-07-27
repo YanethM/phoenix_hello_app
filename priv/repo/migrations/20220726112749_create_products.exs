@@ -5,9 +5,7 @@ defmodule Hello.Repo.Migrations.CreateProducts do
     create table(:products) do
       add :title, :string
       add :description, :string
-      add :price, :decimal
       add :price, :decimal, precision: 15, scale: 6, null: false
-      add :views, :integer
       add :views, :integer, default: 0, null: false
 
       timestamps()
