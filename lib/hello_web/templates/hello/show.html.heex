@@ -1,0 +1,25 @@
+<section class="phx-hero">
+  <h2>Hello World, from <%= @username %>!</h2>
+
+<%= if true do %>
+<HelloWeb.Weather.city name="Manizales"/>
+<HelloWeb.Weather.country name="Colombia"/>
+
+  <p>Some condition is true for user: <%= @username %></p>
+<% else %>
+  <p>Some condition is false for user: <%= @username %></p>
+<% end %>
+
+<table>
+  <tr>
+    <th>Number</th>
+    <th>Power</th>
+  </tr>
+<%= for number <- 1..10 do %>
+  <tr>
+    <td><%= number %></td>
+    <td><%= number * number %></td>
+  </tr>
+<% end %>
+</table>
+</section>
